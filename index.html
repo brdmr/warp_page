@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BREDMAR Warp</title>
+  <style>
+    :root {
+      --bg: #000;
+      --text: #fff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      position: relative;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      font-family: "Rajdhani", "Orbitron", "Eurostile", "Space Grotesk", "Bebas Neue", "Anton", "Trebuchet MS", "Helvetica Neue", sans-serif;
+      letter-spacing: 0.15em;
+    }
+
+    #warp-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      opacity: 0;
+      mix-blend-mode: screen;
+      transition: opacity 1.4s ease, mask-size 1.8s ease-in, -webkit-mask-size 1.8s ease-in;
+      -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 60%);
+      mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 60%);
+      -webkit-mask-size: 0%;
+      mask-size: 0%;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: 50% 50%;
+      mask-position: 50% 50%;
+      pointer-events: none;
+    }
+
+    .title {
+      position: relative;
+      position: absolute;
+      right: clamp(0.9rem, 2vw, 1.6rem);
+      bottom: clamp(0.9rem, 2vw, 1.6rem);
+      font-size: clamp(0.9rem, 3.2vw, 2rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: center;
+      text-shadow:
+        0 0 18px rgba(255, 255, 255, 0.35),
+        0 0 42px rgba(160, 220, 255, 0.22),
+        0 0 72px rgba(100, 180, 255, 0.18);
+      transition: transform 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    body.warp .title {
+      animation: fadeOut 2.2s ease forwards;
+    }
+
+    body.warp #warp-canvas {
+      opacity: 1;
+      -webkit-mask-size: 260%;
+      mask-size: 260%;
+    }
+
+    @keyframes launch {
+      0% {
+        opacity: 1;
+        filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.3));
+      }
+      100% {
+        opacity: 0;
+        filter: blur(6px);
+      }
+    }
+
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.35));
+      }
+      100% {
+        opacity: 0;
+        filter: blur(6px);
+      }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% {
+        text-shadow:
+          0 0 16px rgba(255, 255, 255, 0.35),
+          0 0 40px rgba(160, 220, 255, 0.18),
+          0 0 70px rgba(100, 180, 255, 0.12);
+      }
+      50% {
+        text-shadow:
+          0 0 26px rgba(255, 255, 255, 0.55),
+          0 0 64px rgba(160, 220, 255, 0.35),
+          0 0 110px rgba(100, 180, 255, 0.3);
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="warp-canvas"></canvas>
+  <div class="title" aria-label="Bredmar">BREDMAR</div>
+
+  <script>
+    const canvas = document.getElementById("warp-canvas");
+    const ctx = canvas.getContext("2d");
+    const stars = [];
+    const baseSpeed = 1.5;
+    const cruiseSpeed = 6;
+    const starCount = 700;
+    const fov = 420;
+    let targetSpeed = baseSpeed;
+    let speed = baseSpeed;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = window.devicePixelRatio || 1;
+    let cx = width / 2;
+    let cy = height / 2;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = width / 2;
+      cy = height / 2;
+    }
+
+    function createStar() {
+      const depth = Math.max(width, height);
+      const z = Math.random() * depth + fov;
+      return {
+        x: (Math.random() * 2 - 1) * width,
+        y: (Math.random() * 2 - 1) * height,
+        z,
+        prevZ: z
+      };
+    }
+
+    function resetStar(star) {
+      const depth = Math.max(width, height);
+      star.x = (Math.random() * 2 - 1) * width;
+      star.y = (Math.random() * 2 - 1) * height;
+      star.z = depth + fov;
+      star.prevZ = star.z;
+    }
+
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < starCount; i += 1) {
+        stars.push(createStar());
+      }
+    }
+
+    function draw() {
+      speed += (targetSpeed - speed) * 0.035;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.fillRect(0, 0, width, height);
+
+      for (const star of stars) {
+        star.prevZ = star.z;
+        star.z -= speed;
+
+        const scale = fov / star.z;
+        const prevScale = fov / star.prevZ;
+        const x = star.x * scale + cx;
+        const y = star.y * scale + cy;
+        const px = star.x * prevScale + cx;
+        const py = star.y * prevScale + cy;
+
+        if (x < 0 || x > width || y < 0 || y > height || star.z <= 1) {
+          resetStar(star);
+          continue;
+        }
+
+        const depthFade = 1 - star.z / (Math.max(width, height) + fov);
+        const lineWidth = Math.max(0.4, 2.2 * depthFade);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.35 + depthFade * 0.65})`;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    initStars();
+    requestAnimationFrame(draw);
+    window.addEventListener("resize", () => {
+      resize();
+      initStars();
+    });
+
+    setTimeout(() => {
+      document.body.classList.add("warp");
+      targetSpeed = cruiseSpeed;
+    }, 500);
+  </script>
+</body>
+</html>
