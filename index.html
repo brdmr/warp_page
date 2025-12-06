@@ -23,6 +23,7 @@
       overflow: hidden;
       font-family: "Rajdhani", "Orbitron", "Eurostile", "Space Grotesk", "Bebas Neue", "Anton", "Trebuchet MS", "Helvetica Neue", sans-serif;
       letter-spacing: 0.15em;
+      perspective: 1200px;
     }
 
     #warp-canvas {
@@ -53,6 +54,8 @@
       font-weight: 800;
       text-transform: uppercase;
       text-align: center;
+      transform: translateZ(0);
+      transform-style: preserve-3d;
       text-shadow:
         0 0 18px rgba(255, 255, 255, 0.35),
         0 0 42px rgba(160, 220, 255, 0.22),
@@ -62,7 +65,7 @@
     }
 
     body.warp .title {
-      animation: fadeOut 2.2s ease forwards;
+      animation: fadeOut3D 2.4s ease forwards;
     }
 
     body.warp #warp-canvas {
@@ -71,25 +74,21 @@
       mask-size: 260%;
     }
 
-    @keyframes launch {
+    @keyframes fadeOut3D {
       0% {
         opacity: 1;
-        filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.3));
-      }
-      100% {
-        opacity: 0;
-        filter: blur(6px);
-      }
-    }
-
-    @keyframes fadeOut {
-      0% {
-        opacity: 1;
+        transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
         filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.35));
       }
+      45% {
+        opacity: 0.85;
+        transform: translateZ(90px) rotateX(-8deg) rotateY(10deg) scale(1.08);
+        filter: drop-shadow(0 0 36px rgba(160, 220, 255, 0.4));
+      }
       100% {
         opacity: 0;
-        filter: blur(6px);
+        transform: translateZ(-320px) rotateX(32deg) rotateY(-18deg) scale(0.82);
+        filter: blur(8px);
       }
     }
 
